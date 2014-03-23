@@ -55,8 +55,14 @@ class PolyFitter:
         for h in H:
             X, y = self.toMatrixForm(len(h) - 1, self.validationSet, VALIDATION_SET_SIZE)
             errList.append(self.errorOnSample(h, X, y, VALIDATION_SET_SIZE))
-        print 'validation errors list: ' + str(errList)
-        return min(errList), H[errList.index(min(errList))]
+        return errList
+    
+    def trainingErrors(self, H):
+        errList = []
+        for h in H:
+            X, y = self.toMatrixForm(len(h) - 1, self.trainingSet, TRAINING_SET_SIZE)
+            errList.append(self.errorOnSample(h, X, y, TRAINING_SET_SIZE))
+        return errList
         
     def test(self, h):
         err = 0
@@ -67,9 +73,18 @@ class PolyFitter:
         H = []
         for i in range(1, MAX_DEGREE + 1):
             H.append(self.train(i))
-        validationError, h = self.validate(H)
-        print 'validation error: ' + str(validationError)
-        print 'test error: ' + str(self.test(h))
+        validationErrors = self.validate(H)
+        h = H[validationErrors.index(min(validationErrors))] # h is the one with the minimal validation error over H
+        trainingErrors = self.trainingErrors(H) #get the training sample errors for H
+        print 'Test error of best fitting polynomial is: ' + str(self.test(h))
+        print 'The degree of the best fitting polynomial is: ' + str(len(h))
+        plt.plot(range(1,11), validationErrors[:10])
+        plt.plot(range(1,11), trainingErrors[:10])
+        plt.xlabel('degree')
+        plt.ylabel('err')
+        plt.show()
+        
+
         
     
 def main():
