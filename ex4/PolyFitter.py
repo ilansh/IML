@@ -1,7 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+from operator import itemgetter
 
 TRAINING_SET_SIZE = 20
 VALIDATION_SET_SIZE = 101
@@ -23,9 +23,9 @@ class PolyFitter:
         labels = fLabels.read().split()
         for i in range(TRAINING_SET_SIZE):
             self.trainingSet.append((float(domain[i]), float(labels[i])))
-        for i in range(TRAINING_SET_SIZE, VALIDATION_SET_SIZE):
+        for i in range(TRAINING_SET_SIZE, VALIDATION_SET_SIZE + TRAINING_SET_SIZE):
             self.validationSet.append((float(domain[i]), float(labels[i])))
-        for i in range(TRAINING_SET_SIZE + VALIDATION_SET_SIZE, TEST_SET_SIZE):
+        for i in range(TRAINING_SET_SIZE + VALIDATION_SET_SIZE, TEST_SET_SIZE + TRAINING_SET_SIZE + VALIDATION_SET_SIZE):
             self.testSet.append((float(domain[i]), float(labels[i])))
       
     def toMatrixForm(self, d, data, dataSize):
@@ -38,24 +38,38 @@ class PolyFitter:
         X = np.matrix(X)
         return X, y
           
+    def errorOnSample(self, h, X, y, sampleSize):
+        err = 0
+        for i in range(sampleSize):
+            err += float(np.dot(h, X[:,i]) - y[i]) ** 2
+        return err / sampleSize
+    
     def train(self, d):
         X, y = self.toMatrixForm(d, self.trainingSet, TRAINING_SET_SIZE)
         U, s, V = np.linalg.svd(X.transpose(), full_matrices = False)
-        S = np.diag(s)
-        return V * np.linalg.inv(S) * U.transpose() * y
+        S = np.matrix(np.diag(s))
+        return np.hstack((V.H * S.I * U.H * y).tolist())
         
     def validate(self, H):
-        X, y = toMatrixForm(d, self.validationSet, VALIDATION_SET_SIZE)
-        err = 0
+        errList = []
         for h in H:
-            for sample in self.validationSet:
-                err += (h * X[i] - y[i]) ** 2 
+            X, y = self.toMatrixForm(len(h) - 1, self.validationSet, VALIDATION_SET_SIZE)
+            errList.append(self.errorOnSample(h, X, y, VALIDATION_SET_SIZE))
+        print 'validation errors list: ' + str(errList)
+        return min(errList), H[errList.index(min(errList))]
+        
+    def test(self, h):
+        err = 0
+        X, y = self.toMatrixForm(len(h) - 1, self.testSet, TEST_SET_SIZE)
+        return self.errorOnSample(h, X, y, TEST_SET_SIZE)
     
     def fit(self):
         H = []
-        print self.train(5)
-        #for i in range(1, MAX_DEGREE + 1):
-        #    H.append(p.train(i))
+        for i in range(1, MAX_DEGREE + 1):
+            H.append(self.train(i))
+        validationError, h = self.validate(H)
+        print 'validation error: ' + str(validationError)
+        print 'test error: ' + str(self.test(h))
         
     
 def main():
