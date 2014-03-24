@@ -46,9 +46,12 @@ class PolyFitter:
     
     def train(self, d):
         X, y = self.toMatrixForm(d, self.trainingSet, TRAINING_SET_SIZE)
-        U, s, V = np.linalg.svd(X.transpose(), full_matrices = False)
-        S = np.matrix(np.diag(s))
-        return np.hstack((V.H * S.I * U.H * y).tolist())
+#         U, s, V = np.linalg.svd(X.transpose(), full_matrices = False)
+#         S = np.matrix(np.diag(s))
+#         return np.hstack((V.H * S.I * U.H * y).tolist())
+        Aplus = np.linalg.pinv(X * X.T)
+        return np.hstack((Aplus * X * y).tolist())
+        
         
     def validate(self, H):
         errList = []
