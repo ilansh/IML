@@ -1,7 +1,6 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from operator import itemgetter
 
 TRAINING_SET_SIZE = 20
 VALIDATION_SET_SIZE = 101
@@ -13,8 +12,7 @@ class PolyFitter:
     def __init__(self):
         self.trainingSet = []
         self.validationSet = []  
-        self.testSet = [] 
-        pass  
+        self.testSet = []   
     
     def loadData(self, domainFileName, labelsFileName):
         fDomain = open(domainFileName, 'r')
@@ -68,25 +66,24 @@ class PolyFitter:
         return errList
         
     def test(self, h):
-        err = 0
         X, y = self.toMatrixForm(len(h) - 1, self.testSet, TEST_SET_SIZE)
         return self.errorOnSample(h, X, y, TEST_SET_SIZE)
     
     def fit(self):
-        H = []
+        H = [] #h1 ... h15
         for i in range(1, MAX_DEGREE + 1):
             H.append(self.train(i))
         validationErrors = self.validate(H)
         h = H[validationErrors.index(min(validationErrors))] # h is the one with the minimal validation error over H
         trainingErrors = self.trainingErrors(H) #get the training sample errors for H
         print 'Test error of best fitting polynomial is: ' + str(self.test(h))
-        print 'The degree of the best fitting polynomial is: ' + str(len(h))
-        plt.plot(range(1,11), validationErrors[:10])
-        plt.plot(range(1,11), trainingErrors[:10])
+        print 'The degree of the best fitting polynomial is: ' + str(len(h) - 1)
+        val, = plt.plot(range(1,11), validationErrors[:10])
+        tra, = plt.plot(range(1,11), trainingErrors[:10])
         plt.xlabel('degree')
         plt.ylabel('err')
+        plt.legend([val, tra], ["validation error", "training error"])
         plt.show()
-        
 
         
     
