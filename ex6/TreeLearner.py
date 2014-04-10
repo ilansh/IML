@@ -35,31 +35,50 @@ class TreeLearner:
                 return False
         return True
     
-    def majority(self, S):
-        zeros = 0
-        ones = 0
-        
-        for pair in S:
-            if pair[1] == 0:
-                zeros += 1
-            else:
-                ones += 1
-        return 0 if zeros > ones else 1 
+    def majority(self, labelSet):
+        return 0 if sum(labelSet) < len(labelSet)/2 else 1 
     
     def maxGainFeature(self):
         pass
     
+    def splitByFeature(self, domainSet, labelSet, index):
+        leftDomain, middleDomain, rightDomain = [], [], []
+        leftLabels, middleLabels, rightLabels = [], [], []
+        
+        for i in range(len(domainSet)):
+            if domainSet[i][index] == -1:
+                leftDomain.append(domainSet[i])
+                leftLabels.append(labelSet[i])
+            elif domainSet[i][index] == 0:
+                middleDomain.append(domainSet[i])
+                middleLabels.append(labelSet[i])
+            else:
+                rightDomain.append(domainSet[i])
+                rightLabels.append(labelSet[i])
+        
+        return leftDomain, middleDomain, rightDomain, leftLabels, middleLabels, rightLabels 
+        
+        
     
-    def ID3(self, S, A):
-        if self.allIs(self.trainingSet, 1):
+    def ID3(self, domainSet, labelSet, featureSet):
+        if self.allIs(labelSet, 1):
             return Tree(True, 1)
-        if self.allIs(self.trainingSet, 0):
+        if self.allIs(labelSet, 0):
             return Tree(True, 0)
-        if A.isEmpty() == 0:
-            return Tree(True, self.majority(S))
+        if featureSet.isEmpty():
+            return Tree(True, self.majority(labelSet))
         else:
             j = self.maxGainFeature(S)
-            if 
+            if self.allIs(self.listify(domainSet, j), 0) or self.allIs(self.listify(domainSet, j), 1):
+                return Tree(True, self.majority(labelSet))
+            
+            else:
+                leftDomain, middleDomain, rightDomain, leftLabels, middleLabels, rightLabels = self.splitByFeature(self, domainSet, labelSet, j)
+            
+            t.left = ID3(self, )
+            
+        
+        
         
 class Tree:
     
