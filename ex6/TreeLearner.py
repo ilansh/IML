@@ -1,83 +1,131 @@
+'''
+Created on Apr 13, 2014
+@author: yahav_be
+'''
+
+import numpy
+
+class Parties:
+    Democrat, Republican = range(2)
+
+class Answers:
+    Yes, No, Unanswered = 1, -1, 0
 
 class TreeLearner:
     
     def __init__(self):
-        self.trainingDomain = []
-        self.trainingLabels = []
-        self.testDomain = []
-        self.testLabels = []
+        self.trainingSet = {}
+        self.testLabels = {}
     
     def loadSet(self, domainFileName, labelsFileName):
         fDomain = open(domainFileName, 'r')
         fLabels = open(labelsFileName, 'r')
         domain = []
+        result = set()
         for line in fDomain:
             domain.append(map(int, line.split()))
-        labels = []
-        for line in fLabels:
-            labels.append(int(line))
-        return domain, labels
+        for i, line in enumerate(fLabels):
+            result.add((tuple(domain[i]), int(line)))
+        print result    
+        return result
     
     def load(self):
-        self.trainingDomain, self.trainingLabels = self.loadData('DT/Xtrain','DT/Ytrain')
-        self.testDomain, self.testLabels = self.loadData('DT/Xtest', 'DT/Ytest')
+        self.trainingSet = self.loadSet('Xtrain','Ytrain')
+        self.testSet = self.loadSet('Xtest', 'Ytest')
         
-        
-    def listify(self, domainSet, index):
-        res = []
-        for item in domainSet:
-            res.append(item[index])
-        return res
-        
-    def allIs(self, valueList, value):
-        for item in valueList:
+    def allIs(self, valueSet, value):
+        for item in valueSet:
             if item != value:
                 return False
         return True
     
-    def majority(self, labelSet):
-        return 0 if sum(labelSet) < len(labelSet)/2 else 1 
-    
-    def maxGainFeature(self):
-        pass
-    
-    def splitByFeature(self, domainSet, labelSet, index):
-        leftDomain, middleDomain, rightDomain = [], [], []
-        leftLabels, middleLabels, rightLabels = [], [], []
-        
-        for i in range(len(domainSet)):
-            if domainSet[i][index] == -1:
-                leftDomain.append(domainSet[i])
-                leftLabels.append(labelSet[i])
-            elif domainSet[i][index] == 0:
-                middleDomain.append(domainSet[i])
-                middleLabels.append(labelSet[i])
+    def majority(self, domain):
+        zeros, ones = 0, 0
+        for item in domain:
+            if(item[1] == 0):
+                zeros += 1
             else:
-                rightDomain.append(domainSet[i])
-                rightLabels.append(labelSet[i])
-        
-        return leftDomain, middleDomain, rightDomain, leftLabels, middleLabels, rightLabels 
-        
-        
-    
-    def ID3(self, domainSet, labelSet, featureSet):
-        if self.allIs(labelSet, 1):
-            return Tree(True, 1)
-        if self.allIs(labelSet, 0):
-            return Tree(True, 0)
-        if featureSet.isEmpty():
-            return Tree(True, self.majority(labelSet))
+                ones += 1
+        return Parties.Republican if ones > zeros else Parties.Democrat
+
+    def probability(self, domain, isLabel, value, index):
+        counter = 0.0
+        if isLabel:
+            for item in domain:
+                if item[1] == value:
+                    counter += 1
         else:
-            j = self.maxGainFeature(S)
-            if self.allIs(self.listify(domainSet, j), 0) or self.allIs(self.listify(domainSet, j), 1):
-                return Tree(True, self.majority(labelSet))
-            
-            else:
-                leftDomain, middleDomain, rightDomain, leftLabels, middleLabels, rightLabels = self.splitByFeature(self, domainSet, labelSet, j)
-            
-            t.left = ID3(self, )
+            for item in domain:
+                if item[0][index] == value:
+                    counter += 1
+        return counter / len(domain)
+        
+        
+
+    def conditionalProbability(self, domain, labelValue, givenFeatureValue, index):
+        relevantSet = self.splitDomainByFeature(domain, index, givenFeatureValue)
+        counter = 0.0
+        for item in relevantSet:
+            if item[1] == labelValue:
+                counter += 1   
+        return counter / len(relevantSet)
+        
             
         
+    
+
+    #def gain(self, index):
+        #return self.C(self.conditionalProbability(domain, Parties.Republican, None, None)) - (self.probability(domain, False, Answers.No, index)*self.C(self.conditionalProbability(domain, labelValue, givenFeatureValue, index)))
+        
+        
+
+     
+    def C(self, a):
+        return -a*numpy.log(a)-(1-a)*numpy.log(1-a)
+            
+    
+    #def maxGainFeature(self, domain, features):
+        #gains = []
+        
+       # for index in features:
+            
+        
+        
+        
+    
+    def allSameFeatureValue(self, domain, index):
+        temp = None
+        for item in domain:
+            cur = item[0][index]
+            if (temp != None & temp != cur):
+                return False
+        return True
+    
+    def splitDomainByFeature(self, domain, index, value):
+        result = set()
+        for item in domain:
+            if item[0][index] == value:
+                result.add(item)
+        return result
+              
+        
+    def ID3(self, domain, features):
+        if self.allIs(domain, Parties.Republican):
+            return Tree(True, Parties.Republican)
+        if self.allIs(domain, Parties.Democrat):
+            return Tree(True, Parties.Democrat)
+        if not features:
+            return Tree(True, self.majority(domain))
+        else:
+            index = numpy.min(features)
+            if self.allSamefeatureValue(domain, index):
+                return Tree(True, self.majority(domain))
+            else:
+                t= Tree(False, index)
+                t.left = self.ID3(self.splitDomainByFeature(domain, index, Answers.No), features - index)
+                t.middle = self.ID3(self.splitDomainByFeature(domain, index, Answers.Unanswered), features - index)
+                t.right = self.ID3(self.splitDomainByFeature(domain, index, Answers.Yes), features - index)
+                return t   
         
         
 class Tree:
