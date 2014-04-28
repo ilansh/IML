@@ -30,8 +30,8 @@ class TreeLearner:
         return result
     
     def load(self):
-        self.trainingSet = self.loadSet('Xtrain','Ytrain')
-        self.testSet = self.loadSet('Xtest', 'Ytest')
+        self.trainingSet = self.loadSet('DT/Xtrain','DT/Ytrain')
+        self.testSet = self.loadSet('DT/Xtest', 'DT/Ytest')
         
     def allIs(self, valueSet, value):
         for item in valueSet:
@@ -85,9 +85,8 @@ class TreeLearner:
             
     
     #def maxGainFeature(self, domain, features):
-        #gains = []
-        
-       # for index in features:
+        #gains = []  
+        # for index in features:
             
         
         
