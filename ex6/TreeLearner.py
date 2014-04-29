@@ -8,14 +8,14 @@ import numpy
 class Parties:
     Democrat, Republican = range(2)
 
-class Answers:
-    Yes, No, Unanswered = 1, -1, 0
+Answers = {'Yes' : 1 , 
+           'No' : -1 , 
+           'Unanswered' : 0 }
 
 class TreeLearner:
     
     def __init__(self):
-        self.trainingSet = {}
-        self.testLabels = {}
+        pass
     
     def loadSet(self, domainFileName, labelsFileName):
         fDomain = open(domainFileName, 'r')
@@ -29,9 +29,9 @@ class TreeLearner:
         print result    
         return result
     
-    def load(self):
-        self.trainingSet = self.loadSet('DT/Xtrain','DT/Ytrain')
-        self.testSet = self.loadSet('DT/Xtest', 'DT/Ytest')
+#     def load(self):
+#         self.trainingSet = self.loadSet('DT/Xtrain','DT/Ytrain')
+#         self.testSet = self.loadSet('DT/Xtest', 'DT/Ytest')
         
     def allIs(self, value, sampleSet):
         for sample in sampleSet:
@@ -60,21 +60,19 @@ class TreeLearner:
 #                     counter += 1
 #         return counter / len(sampleSet)
 
-    def probability(self, sampleSet):
-        counterNo = 0
-        counterYes = 0
+    def probability(self, sampleSet, feature):
+        counterDemocrat = 0
+#         counterRepublican = 0
         
         for sample in sampleSet:
-            if sample[1] == Answers.No:
-                counterNo += 1
-            elif sample[1] == Answers.Yes:
-                counterYes += 1
+            if sample[1] == Parties.Democrat:
+                counterDemocrat += 1
+#             else:
+#                 counterRepublican += 1
 
-        probNo = counterNo / len(sampleSet)
-        probYes = counterYes / len(sampleSet)
-        probUnAnswered = 1 - probNo - probYes
+        probDemocrat = float(counterDemocrat) / len(sampleSet)
         
-        return probNo, probYes, probUnAnswered
+        return probDemocrat
         
         
         
@@ -94,23 +92,23 @@ class TreeLearner:
     def gain(self, sampleSet, feature):
         sumEntropies = 0
         #calculate sum entropies 
-        for answer in Answers:
-            answerSubset = self.subsetWithVal(answer, sampleSet)
-            sumEntropies += len(answerSubset) / len(sampleSet) * self.entropy(answerSubset)
-        return self.entropy(sampleSet) - sumEntropies
+        for answer in Answers.values():
+            answerSubset = self.subsetWithVal(answer, sampleSet, feature)
+            sumEntropies += (len(answerSubset) / len(sampleSet)) * self.entropy(answerSubset, feature)
+        return self.entropy(sampleSet, feature) - sumEntropies
         #return self.C(self.conditionalProbability(domain, Parties.Republican, None, None)) - (self.probability(domain, False, Answers.No, index)*self.C(self.conditionalProbability(domain, labelValue, givenFeatureValue, index)))
         
-    def subsetWithVal(self, value, sampleSet):
+    def subsetWithVal(self, value, sampleSet, feature):
         resultSet = set()
         for sample in sampleSet:
-            if sample[1] == value:
+            if sample[0][feature] == value:
                 resultSet.add(sample)
         return resultSet 
 
      
-    def entropy(self, sampleSet):
-        a, b, c = self.probablity(sampleSet)
-        return -a * numpy.log(a) - b * numpy.log(b) - c * numpy.log(c)
+    def entropy(self, sampleSet, feature):
+        a = self.probability(sampleSet, feature)
+        return -a * numpy.log(a) - (1 - a) * numpy.log(1 - a)
             
     
     #def maxGainFeature(self, domain, features):
@@ -119,11 +117,15 @@ class TreeLearner:
             
     def maxGainFeature(self, sampleSet, featureSet):
         maxGain = self.gain(sampleSet, next(iter(featureSet)))
+        i = 0
+        maxGainIndex = 0
         for feature in featureSet:
-            curGain = self.gain(feature)
+            curGain = self.gain(sampleSet, feature)
             if curGain > maxGain:
                 maxGain = curGain
-        return maxGain
+                maxGainIndex = i
+            i += 1
+        return maxGainIndex
             
         
         
@@ -135,12 +137,12 @@ class TreeLearner:
                 return False
         return True
     
-    def splitSamplesByFeature(self, sampleSet, index, value):
-        result = set()
-        for sample in sampleSet:
-            if sample[0][index] == value:
-                result.add(sample)
-        return result
+#     def splitSamplesByFeature(self, sampleSet, index, value):
+#         result = set()
+#         for sample in sampleSet:
+#             if sample[0][index] == value:
+#                 result.add(sample)
+#         return result
               
         
     def ID3(self, sampleSet, featureSet):
@@ -151,15 +153,16 @@ class TreeLearner:
         if not featureSet:
             return Tree(True, self.majority(sampleSet))
         else:
-            index = numpy.min(featureSet)
-            if self.allSamefeatureValue(sampleSet, index):
+            index = self.maxGainFeature(sampleSet, featureSet)
+#             index = min(featureSet)
+            if self.allSameFeatureValue(sampleSet, index):
                 return Tree(True, self.majority(sampleSet))
             else:
                 t = Tree(False, index)
-                t.left = self.ID3(self.splitSamplesByFeature(sampleSet, index, Answers.No), featureSet - index)
-                t.middle = self.ID3(self.splitSamplesByFeature(sampleSet, index, Answers.Unanswered), featureSet - index)
-                t.right = self.ID3(self.splitSamplesByFeature(sampleSet, index, Answers.Yes), featureSet - index)
-                return t   
+                t.left = self.ID3(self.subsetWithVal(Answers['No'], sampleSet, index), featureSet - set([index]))
+                t.middle = self.ID3(self.subsetWithVal(Answers['Unanswered'], sampleSet, index), featureSet - set([index]))
+                t.right = self.ID3(self.subsetWithVal(Answers['Yes'], sampleSet, index), featureSet - set([index]))
+                return t
         
         
 class Tree:
@@ -171,9 +174,11 @@ class Tree:
 
 def main():
     t = TreeLearner()
-    t.load()
-    
-#     t.ID3()
+    trainingSet = t.loadSet('DT/Xtrain','DT/Ytrain')
+    testSet = t.loadSet('DT/Xtest', 'DT/Ytest')
+    featureSet = set(range(16))
+#     print featureSet
+    t.ID3(trainingSet, featureSet)
     
 if __name__ == "__main__":
     main()
