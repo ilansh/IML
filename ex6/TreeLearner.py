@@ -33,97 +33,132 @@ class TreeLearner:
         self.trainingSet = self.loadSet('DT/Xtrain','DT/Ytrain')
         self.testSet = self.loadSet('DT/Xtest', 'DT/Ytest')
         
-    def allIs(self, valueSet, value):
-        for item in valueSet:
-            if item != value:
+    def allIs(self, value, sampleSet):
+        for sample in sampleSet:
+            if sample[1] != value:
                 return False
         return True
     
-    def majority(self, domain):
+    def majority(self, sampleSet):
         zeros, ones = 0, 0
-        for item in domain:
-            if(item[1] == 0):
+        for sample in sampleSet:
+            if(sample[1] == Parties.Democrat):
                 zeros += 1
             else:
                 ones += 1
         return Parties.Republican if ones > zeros else Parties.Democrat
 
-    def probability(self, domain, isLabel, value, index):
-        counter = 0.0
-        if isLabel:
-            for item in domain:
-                if item[1] == value:
-                    counter += 1
-        else:
-            for item in domain:
-                if item[0][index] == value:
-                    counter += 1
-        return counter / len(domain)
+#     def probability(self, sampleSet, isLabel, value, index):
+#         counter = 0.0
+#         if isLabel:
+#             for sample in sampleSet:
+#                 if sample[1] == value:
+#                     counter += 1
+#         else:
+#             for sample in sampleSet:
+#                 if sample[0][index] == value:
+#                     counter += 1
+#         return counter / len(sampleSet)
+
+    def probability(self, sampleSet):
+        counterNo = 0
+        counterYes = 0
+        
+        for sample in sampleSet:
+            if sample[1] == Answers.No:
+                counterNo += 1
+            elif sample[1] == Answers.Yes:
+                counterYes += 1
+
+        probNo = counterNo / len(sampleSet)
+        probYes = counterYes / len(sampleSet)
+        probUnAnswered = 1 - probNo - probYes
+        
+        return probNo, probYes, probUnAnswered
+        
         
         
 
-    def conditionalProbability(self, domain, labelValue, givenFeatureValue, index):
-        relevantSet = self.splitDomainByFeature(domain, index, givenFeatureValue)
-        counter = 0.0
-        for item in relevantSet:
-            if item[1] == labelValue:
-                counter += 1   
-        return counter / len(relevantSet)
-        
-            
+#     def conditionalProbability(self, domain, labelValue, givenFeatureValue, index):
+#         relevantSet = self.splitDomainByFeature(domain, index, givenFeatureValue)
+#         counter = 0.0
+#         for item in relevantSet:
+#             if item[1] == labelValue:
+#                 counter += 1   
+#         return counter / len(relevantSet)
+#         
+#             
         
     
 
-    #def gain(self, index):
+    def gain(self, sampleSet, feature):
+        sumEntropies = 0
+        #calculate sum entropies 
+        for answer in Answers:
+            answerSubset = self.subsetWithVal(answer, sampleSet)
+            sumEntropies += len(answerSubset) / len(sampleSet) * self.entropy(answerSubset)
+        return self.entropy(sampleSet) - sumEntropies
         #return self.C(self.conditionalProbability(domain, Parties.Republican, None, None)) - (self.probability(domain, False, Answers.No, index)*self.C(self.conditionalProbability(domain, labelValue, givenFeatureValue, index)))
         
-        
+    def subsetWithVal(self, value, sampleSet):
+        resultSet = set()
+        for sample in sampleSet:
+            if sample[1] == value:
+                resultSet.add(sample)
+        return resultSet 
 
      
-    def C(self, a):
-        return -a*numpy.log(a)-(1-a)*numpy.log(1-a)
+    def entropy(self, sampleSet):
+        a, b, c = self.probablity(sampleSet)
+        return -a * numpy.log(a) - b * numpy.log(b) - c * numpy.log(c)
             
     
     #def maxGainFeature(self, domain, features):
         #gains = []  
         # for index in features:
             
-        
+    def maxGainFeature(self, sampleSet, featureSet):
+        maxGain = self.gain(sampleSet, next(iter(featureSet)))
+        for feature in featureSet:
+            curGain = self.gain(feature)
+            if curGain > maxGain:
+                maxGain = curGain
+        return maxGain
+            
         
         
     
-    def allSameFeatureValue(self, domain, index):
-        temp = None
-        for item in domain:
-            cur = item[0][index]
-            if (temp != None & temp != cur):
+    def allSameFeatureValue(self, sampleSet, index):
+        first = next(iter(sampleSet))[0][index] #feature value in location index of some sample
+        for sample in sampleSet:
+            if (sample[0][index] != first):
                 return False
         return True
     
-    def splitDomainByFeature(self, domain, index, value):
+    def splitSamplesByFeature(self, sampleSet, index, value):
         result = set()
-        for item in domain:
-            if item[0][index] == value:
-                result.add(item)
+        for sample in sampleSet:
+            if sample[0][index] == value:
+                result.add(sample)
         return result
               
         
-    def ID3(self, domain, features):
-        if self.allIs(domain, Parties.Republican):
+    def ID3(self, sampleSet, featureSet):
+        if self.allIs(Parties.Republican, sampleSet):
             return Tree(True, Parties.Republican)
-        if self.allIs(domain, Parties.Democrat):
+        if self.allIs(Parties.Democrat, sampleSet):
             return Tree(True, Parties.Democrat)
-        if not features:
-            return Tree(True, self.majority(domain))
+        if not featureSet:
+            return Tree(True, self.majority(sampleSet))
         else:
-            index = numpy.min(features)
-            if self.allSamefeatureValue(domain, index):
-                return Tree(True, self.majority(domain))
+            index = numpy.min(featureSet)
+            if self.allSamefeatureValue(sampleSet, index):
+                return Tree(True, self.majority(sampleSet))
             else:
-                t= Tree(False, index)
-                t.left = self.ID3(self.splitDomainByFeature(domain, index, Answers.No), features - index)
-                t.middle = self.ID3(self.splitDomainByFeature(domain, index, Answers.Unanswered), features - index)
-                t.right = self.ID3(self.splitDomainByFeature(domain, index, Answers.Yes), features - index)
+                t = Tree(False, index)
+                t.left = self.ID3(self.splitSamplesByFeature(sampleSet, index, Answers.No), featureSet - index)
+                t.middle = self.ID3(self.splitSamplesByFeature(sampleSet, index, Answers.Unanswered), featureSet - index)
+                t.right = self.ID3(self.splitSamplesByFeature(sampleSet, index, Answers.Yes), featureSet - index)
                 return t   
         
         
