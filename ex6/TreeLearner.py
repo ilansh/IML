@@ -5,11 +5,6 @@ Created on Apr 13, 2014
 
 import numpy
 
-from graphviz import Digraph
-
-dot = Digraph(comment = 'Decision Tree')
-
-nodeCount = 0
 
 class Parties:
     Democrat, Republican = range(2)
@@ -35,9 +30,6 @@ class TreeLearner:
         print result    
         return result
     
-#     def load(self):
-#         self.trainingSet = self.loadSet('DT/Xtrain','DT/Ytrain')
-#         self.testSet = self.loadSet('DT/Xtest', 'DT/Ytest')
         
     def allIs(self, value, sampleSet):
         for sample in sampleSet:
@@ -53,18 +45,6 @@ class TreeLearner:
             else:
                 ones += 1
         return Parties.Republican if ones > zeros else Parties.Democrat
-
-#     def probability(self, sampleSet, isLabel, value, index):
-#         counter = 0.0
-#         if isLabel:
-#             for sample in sampleSet:
-#                 if sample[1] == value:
-#                     counter += 1
-#         else:
-#             for sample in sampleSet:
-#                 if sample[0][index] == value:
-#                     counter += 1
-#         return counter / len(sampleSet)
 
     def probability(self, sampleSet, feature):
         counterDemocrat = 0
@@ -151,33 +131,29 @@ class TreeLearner:
 #         return result
               
         
-    def ID3(self, sampleSet, featureSet, fatherName):
+    def ID3(self, sampleSet, featureSet):
         if self.allIs(Parties.Republican, sampleSet):
-            return Tree(True, Parties.Republican, fatherName)
+            return Tree(True, Parties.Republican)
         if self.allIs(Parties.Democrat, sampleSet):
-            return Tree(True, Parties.Democrat, fatherName)
+            return Tree(True, Parties.Democrat)
         if not featureSet:
-            return Tree(True, self.majority(sampleSet), fatherName)
+            return Tree(True, self.majority(sampleSet))
         else:
-            index = self.maxGainFeature(sampleSet, featureSet)
-#             index = min(featureSet)
+#             index = self.maxGainFeature(sampleSet, featureSet)
+            index = min(featureSet)
             if self.allSameFeatureValue(sampleSet, index):
-                return Tree(True, self.majority(sampleSet), fatherName)
+                return Tree(True, self.majority(sampleSet))
             else:
-                t = Tree(False, index, fatherName)
-                t.left = self.ID3(self.subsetWithVal(Answers['No'], sampleSet, index), featureSet - set([index]),t.getName())
-                t.middle = self.ID3(self.subsetWithVal(Answers['Unanswered'], sampleSet, index), featureSet - set([index]),t.getName)
-                t.right = self.ID3(self.subsetWithVal(Answers['Yes'], sampleSet, index), featureSet - set([index]),t.getName)
+                t = Tree(False, index)
+                t.left = self.ID3(self.subsetWithVal(Answers['No'], sampleSet, index), featureSet - set([index]))
+                t.middle = self.ID3(self.subsetWithVal(Answers['Unanswered'], sampleSet, index), featureSet - set([index]))
+                t.right = self.ID3(self.subsetWithVal(Answers['Yes'], sampleSet, index), featureSet - set([index]))
                 return t
         
         
 class Tree:
     
-    def __init__(self, isLeaf, val, fatherName):
-        nodeCount += 1
-        self.name = str(nodeCount)
-        dot.node(self.name, val)
-        dot.edge(fatherName, str(nodeCount))
+    def __init__(self, isLeaf, val):
         self.isLeaf = isLeaf
         
     def getName(self):
@@ -191,9 +167,8 @@ def main():
     testSet = t.loadSet('DT/Xtest', 'DT/Ytest')
     featureSet = set(range(16))
 #     print featureSet
-    t.ID3(trainingSet, featureSet, '0')
+    t.ID3(trainingSet, featureSet)
     
-    print dot.source
     
 if __name__ == "__main__":
     main()
