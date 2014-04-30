@@ -5,6 +5,12 @@ Created on Apr 13, 2014
 
 import numpy
 
+from graphviz import Digraph
+
+dot = Digraph(comment = 'Decision Tree')
+
+nodeCount = 0
+
 class Parties:
     Democrat, Republican = range(2)
 
@@ -145,30 +151,37 @@ class TreeLearner:
 #         return result
               
         
-    def ID3(self, sampleSet, featureSet):
+    def ID3(self, sampleSet, featureSet, fatherName):
         if self.allIs(Parties.Republican, sampleSet):
-            return Tree(True, Parties.Republican)
+            return Tree(True, Parties.Republican, fatherName)
         if self.allIs(Parties.Democrat, sampleSet):
-            return Tree(True, Parties.Democrat)
+            return Tree(True, Parties.Democrat, fatherName)
         if not featureSet:
-            return Tree(True, self.majority(sampleSet))
+            return Tree(True, self.majority(sampleSet), fatherName)
         else:
             index = self.maxGainFeature(sampleSet, featureSet)
 #             index = min(featureSet)
             if self.allSameFeatureValue(sampleSet, index):
-                return Tree(True, self.majority(sampleSet))
+                return Tree(True, self.majority(sampleSet), fatherName)
             else:
-                t = Tree(False, index)
-                t.left = self.ID3(self.subsetWithVal(Answers['No'], sampleSet, index), featureSet - set([index]))
-                t.middle = self.ID3(self.subsetWithVal(Answers['Unanswered'], sampleSet, index), featureSet - set([index]))
-                t.right = self.ID3(self.subsetWithVal(Answers['Yes'], sampleSet, index), featureSet - set([index]))
+                t = Tree(False, index, fatherName)
+                t.left = self.ID3(self.subsetWithVal(Answers['No'], sampleSet, index), featureSet - set([index]),t.getName())
+                t.middle = self.ID3(self.subsetWithVal(Answers['Unanswered'], sampleSet, index), featureSet - set([index]),t.getName)
+                t.right = self.ID3(self.subsetWithVal(Answers['Yes'], sampleSet, index), featureSet - set([index]),t.getName)
                 return t
         
         
 class Tree:
     
-    def __init__(self, isLeaf, val):
+    def __init__(self, isLeaf, val, fatherName):
+        nodeCount += 1
+        self.name = str(nodeCount)
+        dot.node(self.name, val)
+        dot.edge(fatherName, str(nodeCount))
         self.isLeaf = isLeaf
+        
+    def getName(self):
+        return self.name
     
     
 
@@ -178,7 +191,9 @@ def main():
     testSet = t.loadSet('DT/Xtest', 'DT/Ytest')
     featureSet = set(range(16))
 #     print featureSet
-    t.ID3(trainingSet, featureSet)
+    t.ID3(trainingSet, featureSet, '0')
+    
+    print dot.source
     
 if __name__ == "__main__":
     main()
