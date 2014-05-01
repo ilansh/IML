@@ -229,6 +229,10 @@ def main():
         forest = t.randomForest(trainingSet, featureSet, 4, i+1)
         testErrors.append(t.testErrorForest(forest, testSet))
     print testErrors
-    
+    plt.plot(range(1,16), testErrors)
+    plt.xlabel("Number Of Trees")
+    plt.ylabel("Test Error")
+    plt.show()
+ 
 if __name__ == "__main__":
     main()
