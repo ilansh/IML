@@ -20,7 +20,7 @@ nodeCount = 0
 
 class TreeLearner:
     
-    def __init__(self):	
+    def __init__(self):    
         pass
    
     def loadSet(self, domainFileName, labelsFileName):
@@ -34,9 +34,6 @@ class TreeLearner:
             result.add((tuple(domain[i]), int(line)))
         return result
     
-#     def load(self):
-#         self.trainingSet = self.loadSet('DT/Xtrain','DT/Ytrain')
-#         self.testSet = self.loadSet('DT/Xtest', 'DT/Ytest')
         
     def allIs(self, value, sampleSet):
         for sample in sampleSet:
@@ -53,27 +50,12 @@ class TreeLearner:
                 ones += 1
         return Parties.Republican if ones > zeros else Parties.Democrat
 
-#     def probability(self, sampleSet, isLabel, value, index):
-#         counter = 0.0
-#         if isLabel:
-#             for sample in sampleSet:
-#                 if sample[1] == value:
-#                     counter += 1
-#         else:
-#             for sample in sampleSet:
-#                 if sample[0][index] == value:
-#                     counter += 1
-#         return counter / len(sampleSet)
-
     def probability(self, sampleSet, feature):
         counterDemocrat = 0
-#         counterRepublican = 0
         
         for sample in sampleSet:
             if sample[1] == Parties.Democrat:
                 counterDemocrat += 1
-#             else:
-#                 counterRepublican += 1
 
         probDemocrat = float(counterDemocrat) / len(sampleSet)
         
@@ -101,7 +83,6 @@ class TreeLearner:
             answerSubset = self.subsetWithVal(answer, sampleSet, feature)
             sumEntropies += (len(answerSubset) / len(sampleSet)) * self.entropy(answerSubset, feature)
         return self.entropy(sampleSet, feature) - sumEntropies
-        #return self.C(self.conditionalProbability(domain, Parties.Republican, None, None)) - (self.probability(domain, False, Answers.No, index)*self.C(self.conditionalProbability(domain, labelValue, givenFeatureValue, index)))
         
     def subsetWithVal(self, value, sampleSet, feature):
         resultSet = set()
@@ -115,11 +96,7 @@ class TreeLearner:
         a = self.probability(sampleSet, feature)
         return -a * numpy.log(a) - (1 - a) * numpy.log(1 - a)
             
-    
-    #def maxGainFeature(self, domain, features):
-        #gains = []  
-        # for index in features:
-            
+
     def maxGainFeature(self, sampleSet, featureSet):
         maxGain = self.gain(sampleSet, next(iter(featureSet)))
         i = 0
@@ -133,7 +110,6 @@ class TreeLearner:
         return maxGainIndex
             
         
-        
     
     def allSameFeatureValue(self, sampleSet, index):
         first = next(iter(sampleSet))[0][index] #feature value in location index of some sample
@@ -141,14 +117,7 @@ class TreeLearner:
             if (sample[0][index] != first):
                 return False
         return True
-
-#     def splitSamplesByFeature(self, sampleSet, index, value):
-#         result = set()
-#         for sample in sampleSet:
-#             if sample[0][index] == value:
-#                 result.add(sample)
-#         return result
-		
+        
 
         
     def ID3(self, sampleSet, featureSet, fatherName):
@@ -174,13 +143,13 @@ class TreeLearner:
 class Tree:
     
     def __init__(self, isLeaf, val, fatherName):
-		global nodeCount
-		nodeCount += 1
-		self.name = str(nodeCount)
-		print self.name
-		dot.node(self.name, str(val))
-		dot.edge(fatherName, str(nodeCount))
-		self.isLeaf = isLeaf
+        global nodeCount
+        nodeCount += 1
+        self.name = str(nodeCount)
+        print self.name
+        dot.node(self.name, str(val))
+        dot.edge(fatherName, str(nodeCount))
+        self.isLeaf = isLeaf
         
     def getName(self):
         return self.name
@@ -188,13 +157,13 @@ class Tree:
     
 
 def main():
-	t = TreeLearner()
-	trainingSet = t.loadSet('DT/Xtrain','DT/Ytrain')
-	testSet = t.loadSet('DT/Xtest', 'DT/Ytest')
-	featureSet = set(range(16))
-	t.ID3(trainingSet, featureSet, '0')
-	print dot.source
-	dot.render('try.gv', view=True)
+    t = TreeLearner()
+    trainingSet = t.loadSet('DT/Xtrain','DT/Ytrain')
+    testSet = t.loadSet('DT/Xtest', 'DT/Ytest')
+    featureSet = set(range(16))
+    t.ID3(trainingSet, featureSet, '0')
+    print dot.source
+    dot.render('DecisionTree.gv', view=True)
     
 if __name__ == "__main__":
     main()
