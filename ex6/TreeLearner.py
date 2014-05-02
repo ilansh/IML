@@ -26,6 +26,7 @@ class TreeLearner:
    
 # Loads data from file
     def loadSet(self, domainFileName, labelsFileName):
+        counter = 0
         fDomain = open(domainFileName, 'r')
         fLabels = open(labelsFileName, 'r')
         domain = []
@@ -33,7 +34,8 @@ class TreeLearner:
         for line in fDomain:
             domain.append(map(int, line.split()))
         for i, line in enumerate(fLabels):
-            result.add((tuple(domain[i]), int(line)))
+            result.add((tuple(domain[i]), int(line), counter))
+            counter += 1
         return result
     
 # Checks if all the examples in the given set has the same label
