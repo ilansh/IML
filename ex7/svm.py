@@ -60,8 +60,8 @@ class svm:
             sumW = np.add(sumW, w)
         return sumW / T
     
-    def getG(self, X):
-        pass
+    def computeG(self, X):
+        Z = X * sp
         
     
     def sgd_gaussian(self, X, y, T, lam, sigma2):
@@ -71,7 +71,7 @@ class svm:
             alpha = (1.0 / (lam *t)) * beta
             i = random.sample(range(m), 1)[0]
             if
-            
+           
     
 def main():
     
