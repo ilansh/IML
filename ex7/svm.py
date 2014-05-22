@@ -62,6 +62,7 @@ class svm:
     def computeGramMat(self, X, m, sigma2):
         Z = np.mat(X) * np.mat(X.T)
         #!!!! TODO: Check the second repmat why it is m,1 and not 1,m as in the ex description 
+        #If we do the it with 1,m , the matrix dimension are not allignd (1,2074) instead of (52,52)
         G = np.exp(-((numpy.matlib.repmat(np.diag(Z).T, m, 1)- 2 * Z + numpy.matlib.repmat(np.diag(Z), m, 1))) / sigma2)
         return G
          
