@@ -31,17 +31,22 @@ class DigitClassifier:
         m = self.Xtrain.shape[0]
         # Number of iterations
         T = 10 * m
-        
         w = np.zeros(d)
         sum_w = np.zeros(d)
+        
+        yRange = xrange(10)
         
         start = time.time()
         
         for t in xrange(1, T + 1):
             eta = 1.0 / (lam * t)
             i = np.random.randint(m)
-            y_hat = np.argmax([self.zeroOneLoss(y, self.Ytrain[i]) + np.dot(w, np.subtract(self.psi(self.Xtrain[i,:], y), self.psi(self.Xtrain[i,:], self.Ytrain[i]))) for y in xrange(10)])
-            v = np.multiply(lam, w) + np.subtract(self.psi(self.Xtrain[i,:], y_hat), self.psi(self.Xtrain[i,:], self.Ytrain[i]))
+            Xi = self.Xtrain[i,:]
+            Yi = int(self.Ytrain[i])
+            psiArr = [self.psi(Xi, y) for y in yRange];
+            
+            y_hat = np.argmax([self.zeroOneLoss(y, Yi) + np.dot(w, np.subtract(psiArr[y], psiArr[Yi])) for y in yRange])
+            v = np.multiply(lam, w) + np.subtract(psiArr[y_hat], psiArr[Yi])
             w = w - (eta * v)
             sum_w = np.add(sum_w, w)
     
