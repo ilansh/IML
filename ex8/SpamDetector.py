@@ -20,18 +20,23 @@ class SpamDetector:
         f = open(fileName, "r")
         for line in f:
             print line
+            line = line.lower()
+            line = re.sub("[^a-z-\s]",'', line)
             line = re.split("\s+", line, 1)
             line[1] = re.split("\n", line[1])[0]
             self.samples.append((line[1], types[line[0]]))
 
     
     def buildBow(self):
-        self.bow = set()
+        self.bow = {}
+        i = 0
         for message in self.samples:
             for word in message[0].split():
-                self.bow.add(word)
-        self.bow = list(self.bow)   
-    
+                if not self.bow.has_key(word):
+                    self.bow[word] = i
+                    i += 1
+        print len(self.bow)
+        print self.bow
         
     def calcCommonSubstrings(self):
         f = open("K-Matrix", "w+")
@@ -95,18 +100,21 @@ class SpamDetector:
     def psi(self, message):
         message = set(message[0].split())
         res = [0]*len(self.bow)
-        for i in range(len(self.bow)):
-            if self.bow[i] in message:
-                res[i] = 1
+        for word in message:
+            res[self.bow[word]] = 1
         return res
         
 def main():
     sd = SpamDetector()
     sd.loadData("SMSSpamCollection")
     sd.buildBow()
+    #sd.calcCommonSubstrings()
     sd.loadMatrix("K-Matrix")
     for lam in [10, 1, 0.1, 0.01, 0.001]:
-        sd.train(lam)
+        res = sd.train(lam)
+        f = open("lambda" + str(lam), "w+")
+        f.write(str(res))
+        f.close()
         #sd.test()
     
     
